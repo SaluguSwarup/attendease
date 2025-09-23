@@ -131,61 +131,89 @@ document.addEventListener('DOMContentLoaded', () => {
     
 
 
-    markAttendanceBtn.addEventListener('click', async () => {
-        const kCode = kCodeInput.value.trim();
+//     markAttendanceBtn.addEventListener('click', async () => {
+//         const kCode = kCodeInput.value.trim();
 
-        if (!kCode) {
-            statusMessage.textContent = 'K-CODE is missing.';
-            statusMessage.style.color = 'red';
-            return;
-        }
+//         if (!kCode) {
+//             statusMessage.textContent = 'K-CODE is missing.';
+//             statusMessage.style.color = 'red';
+//             return;
+//         }
 
-        // The UID is no longer stored in localStorage. The browser handles the cookie.
-        const dataToHash = "dummy_data_since_uid_is_on_server" + kCode; // We still need to create a hash.
-        // A better approach would be to have the server expect a hash of just the K-Code + a salt.
-        // For now, let's keep the X-CODE generation but remove the UID from it client-side.
-        // NOTE: The backend logic for X-CODE validation would need to be updated.
-        // Let's adjust for a simpler flow: The backend handles the UID, the frontend just sends K-Code.
+//         // The UID is no longer stored in localStorage. The browser handles the cookie.
+//         const dataToHash = "dummy_data_since_uid_is_on_server" + kCode; // We still need to create a hash.
+//         // A better approach would be to have the server expect a hash of just the K-Code + a salt.
+//         // For now, let's keep the X-CODE generation but remove the UID from it client-side.
+//         // NOTE: The backend logic for X-CODE validation would need to be updated.
+//         // Let's adjust for a simpler flow: The backend handles the UID, the frontend just sends K-Code.
 
-        // Let's RE-ADJUST for simplicity and security. The X-CODE's purpose is to bind the UID and K-CODE.
-        // We will send a hash of the K-CODE and the server will combine it with the cookie UID.
-        // This is a more complex change, so for your PoC, we will simply REMOVE UID from the request body.
+//         // Let's RE-ADJUST for simplicity and security. The X-CODE's purpose is to bind the UID and K-CODE.
+//         // We will send a hash of the K-CODE and the server will combine it with the cookie UID.
+//         // This is a more complex change, so for your PoC, we will simply REMOVE UID from the request body.
 
-        // The browser AUTOMATICALLY sends the HttpOnly cookie. We don't need to do anything.
-        // We just need to send the X-CODE as before, but the JS can't know the UID.
-        // This reveals a challenge in your original architecture.
-        // Let's adjust the X-CODE to be something the frontend CAN create.
+//         // The browser AUTOMATICALLY sends the HttpOnly cookie. We don't need to do anything.
+//         // We just need to send the X-CODE as before, but the JS can't know the UID.
+//         // This reveals a challenge in your original architecture.
+//         // Let's adjust the X-CODE to be something the frontend CAN create.
         
-        // --- Let's revert to the original X-CODE logic for now, with the understanding that this is a conceptual PoC ---
-        // A more secure system might use a different challenge-response mechanism.
-        // The most direct way forward without redesigning the hashing is to actually fetch the UID client-side,
-        // use it, and then discard it. But that defeats the purpose of HttpOnly.
+//         // --- Let's revert to the original X-CODE logic for now, with the understanding that this is a conceptual PoC ---
+//         // A more secure system might use a different challenge-response mechanism.
+//         // The most direct way forward without redesigning the hashing is to actually fetch the UID client-side,
+//         // use it, and then discard it. But that defeats the purpose of HttpOnly.
         
-        // --- NEW SIMPLIFIED AND SECURE FLOW ---
-        // Let's modify the X-CODE to just be a hash of the K-CODE.
-        // The security now comes from the server validating the (K-CODE hash + the secure UID cookie).
+//         // --- NEW SIMPLIFIED AND SECURE FLOW ---
+//         // Let's modify the X-CODE to just be a hash of the K-CODE.
+//         // The security now comes from the server validating the (K-CODE hash + the secure UID cookie).
 
-        const xCode = CryptoJS.SHA256(kCode).toString(CryptoJS.enc.Hex);
+//         const xCode = CryptoJS.SHA256(kCode).toString(CryptoJS.enc.Hex);
 
-        const response = await fetch('/attendance/mark', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            // We NO LONGER send the UID. The server gets it from the cookie.
-            body: JSON.stringify({ x_code: xCode })
-        });
+//         const response = await fetch('/attendance/mark', {
+//             method: 'POST',
+//             headers: {'Content-Type': 'application/json'},
+//             // We NO LONGER send the UID. The server gets it from the cookie.
+//             body: JSON.stringify({ x_code: xCode })
+//         });
 
-        const result = await response.json();
+//         const result = await response.json();
 
-        if (result.success) {
-            statusMessage.textContent = result.message;
-            statusMessage.style.color = 'green';
-        } else {
-            statusMessage.textContent = `Error: ${result.message}`;
-            statusMessage.style.color = 'red';
-        }
+//         if (result.success) {
+//             statusMessage.textContent = result.message;
+//             statusMessage.style.color = 'green';
+//         } else {
+//             statusMessage.textContent = `Error: ${result.message}`;
+//             statusMessage.style.color = 'red';
+//         }
+//     });
+// });
+// In app/static/js/student.js
+
+// ... (keep the DOMContentLoaded and loginBtn parts the same) ...
+
+markAttendanceBtn.addEventListener('click', async () => {
+    const kCode = kCodeInput.value.trim();
+    if (!kCode) {
+        statusMessage.textContent = 'K-CODE is missing.';
+        statusMessage.style.color = 'red';
+        return;
+    }
+    
+    // We now send the raw K-CODE, not a hash
+    const response = await fetch('/attendance/mark', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ k_code: kCode })
     });
-});
 
+    const result = await response.json();
+    if (result.success) {
+        statusMessage.textContent = result.message;
+        statusMessage.style.color = 'green';
+    } else {
+        statusMessage.textContent = `Error: ${result.message}`;
+        statusMessage.style.color = 'red';
+    }
+});
+}); // Make sure this closes the DOMContentLoaded
 // app/static/js/student.js
 
 // ... (other code)

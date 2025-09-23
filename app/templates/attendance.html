@@ -5,15 +5,20 @@
     <title>Live Attendance</title>
     <style>
         body { font-family: sans-serif; margin: 2em; }
-        li { padding: 5px; }
+        .session-table { 
+            border: 1px solid #ccc; 
+            padding: 10px; 
+            margin-bottom: 20px; 
+            border-radius: 5px;
+        }
+        th, td { text-align: left; padding: 5px; }
     </style>
 </head>
 <body>
     <h1>Live Attendance</h1>
-    <h3>Current Session K-CODE: <span id="k-code-display">None</span></h3>
-    <ul id="attendance-list">
-        <li>No students yet.</li>
-    </ul>
+    <div id="sessions-container">
+        <p>No active sessions.</p>
+    </div>
     <br>
     <a href="/professor">Back to Professor Dashboard</a>
 

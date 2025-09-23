@@ -5,14 +5,19 @@
     <title>Professor Dashboard</title>
     <style>
         body { font-family: sans-serif; margin: 2em; }
+        input { display: block; margin-bottom: 10px; padding: 5px; }
         a { display: inline-block; margin-top: 1em; }
     </style>
 </head>
 <body>
     <h1>Professor Dashboard</h1>
-    <button id="startSessionBtn">Start Class Session</button>
+    <div>
+        <input type="text" id="profIdInput" placeholder="Enter Your Professor ID">
+        <input type="text" id="classCodeInput" placeholder="Enter Class Code (e.g., CS101)">
+        <button id="startSessionBtn">Start Class Session</button>
+    </div>
     <hr>
-    <h2>Current Session K-CODE: <span id="k-code-display">None</span></h2>
+    <h3>Generated K-CODE: <span id="k-code-display">None</span></h3>
     
     <div>
         <a href="/attendance" target="_blank">View Live Attendance</a>
