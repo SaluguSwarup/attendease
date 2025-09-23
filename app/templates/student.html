@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Student Portal</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+</head>
+<body>
+    <h1>Student Attendance Portal</h1>
+    
+    <div>
+        <h3>Device Registration (PoC)</h3>
+        <p>Enter your Roll Number to get your UID for this device.</p>
+        <input type="text" id="rollNumberInput" placeholder="e.g., 2301001">
+        <button id="loginBtn">Register Device</button>
+        <p>Your UID: <strong id="uid-display">Not set</strong></p>
+    </div>
+    <hr>
+    <div id="attendance-section" style="display:none;">
+        <h3>Mark Attendance</h3>
+        <input type="text" id="kCodeInput" placeholder="Enter K-CODE from professor">
+        <button id="markAttendanceBtn">Mark Me Present</button>
+    </div>
+
+    <p id="status-message"></p>
+
+    <script src="/static/js/student.js"></script>
+</body>
+</html>
