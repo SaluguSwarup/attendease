@@ -187,3 +187,10 @@ def get_session_attendance():
     conn.close()
     
     return [attendee['roll_no'] for attendee in attendees]
+
+def get_working_table_data():
+    """Fetches all records from the working_table."""
+    conn = get_db_connection()
+    students = conn.execute('SELECT roll_no, uid FROM working_table ORDER BY roll_no').fetchall()
+    conn.close()
+    return students

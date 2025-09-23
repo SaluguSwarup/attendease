@@ -122,3 +122,12 @@ def get_attendance():
     attendees = services.get_session_attendance()
     k_code = services.get_current_k_code()
     return jsonify({"k_code": k_code, "attendees": attendees})
+
+@bp.route('/working-table')
+def working_table_page():
+    student_data = services.get_working_table_data()
+    return render_template('working_table.html', students=student_data)
+
+@bp.route('/attendance')
+def attendance_page():
+    return render_template('attendance.html')

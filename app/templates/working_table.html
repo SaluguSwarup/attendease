@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Working Table Data</title>
+    <style>
+        body { font-family: sans-serif; margin: 2em; }
+        table { width: 50%; border-collapse: collapse; }
+        th, td { border: 1px solid #dddddd; text-align: left; padding: 8px; }
+        th { background-color: #f2f2f2; }
+    </style>
+</head>
+<body>
+    <h1>Student UID Mapping</h1>
+    <p>This table shows the permanent mapping of a student's Roll Number to their unique ID (UID).</p>
+    <table>
+        <thead>
+            <tr>
+                <th>Roll Number</th>
+                <th>UID</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for student in students %}
+            <tr>
+                <td>{{ student.roll_no }}</td>
+                <td>{{ student.uid }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <br>
+    <a href="/professor">Back to Professor Dashboard</a>
+</body>
+</html>
