@@ -5,20 +5,30 @@
     <title>Professor Dashboard</title>
     <style>
         body { font-family: sans-serif; margin: 2em; }
+        .section { border: 1px solid #ccc; padding: 15px; margin-bottom: 20px; border-radius: 5px; }
         input { display: block; margin-bottom: 10px; padding: 5px; }
         a { display: inline-block; margin-top: 1em; }
     </style>
 </head>
 <body>
     <h1>Professor Dashboard</h1>
-    <div>
+
+    <div class="section">
+        <h2>Start a New Session</h2>
         <input type="text" id="profIdInput" placeholder="Enter Your Professor ID">
         <input type="text" id="classCodeInput" placeholder="Enter Class Code (e.g., CS101)">
         <button id="startSessionBtn">Start Class Session</button>
+        <h3>Generated K-CODE: <span id="k-code-display">None</span></h3>
     </div>
-    <hr>
-    <h3>Generated K-CODE: <span id="k-code-display">None</span></h3>
-    
+
+    <div class="section">
+        <h2>Manual Attendance</h2>
+        <p>Enter a student's roll number to mark them present manually. A session must be active.</p>
+        <input type="text" id="manualRollInput" placeholder="Enter Student Roll Number">
+        <button id="manualMarkBtn">Mark Present</button>
+        <p id="manual-status"></p>
+    </div>
+
     <div>
         <a href="/attendance" target="_blank">View Live Attendance</a>
     </div>

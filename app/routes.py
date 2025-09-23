@@ -73,3 +73,15 @@ def get_attendance():
     # This now returns ALL active sessions
     active_sessions = services.get_all_active_sessions()
     return jsonify(active_sessions)
+@bp.route('/attendance/manual-mark', methods=['POST'])
+def manual_mark():
+    data = request.get_json()
+    roll_no = data.get('roll_no')
+    k_code = data.get('k_code')
+
+    if not roll_no or not k_code:
+        return jsonify({"success": False, "message": "Roll number and K-CODE are required."}), 400
+
+    success, message = services.manual_mark_attendance(roll_no, k_code)
+    
+    return jsonify({"success": success, "message": message})

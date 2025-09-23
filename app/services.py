@@ -73,3 +73,30 @@ def get_working_table_data():
     students = conn.execute('SELECT roll_no, uid FROM working_table ORDER BY roll_no').fetchall()
     conn.close()
     return students
+def manual_mark_attendance(roll_no, k_code):
+    """Marks a student present manually for a given session."""
+    # 1. Check if the session is valid
+    if k_code not in sessions:
+        return False, "Invalid K-CODE. The session is not active."
+
+    # 2. Check if the roll number is valid
+    conn = get_db_connection()
+    student = conn.execute('SELECT uid FROM working_table WHERE roll_no = ?', (roll_no,)).fetchone()
+    if not student:
+        conn.close()
+        return False, "This Roll Number does not exist in the system."
+
+    # 3. Check if already marked
+    if roll_no in sessions[k_code]["attendees"]:
+        conn.close()
+        return False, "This student is already marked present."
+
+    # 4. Mark attendance in history and live session
+    class_code = sessions[k_code]["class_code"]
+    conn.execute('INSERT INTO attendance_history (roll_no, course) VALUES (?, ?)', (roll_no, class_code))
+    conn.commit()
+    conn.close()
+    
+    sessions[k_code]["attendees"].add(roll_no)
+    
+    return True, f"Successfully marked {roll_no} as present."
