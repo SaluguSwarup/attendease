@@ -3,27 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <title>Student Portal</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <style>
+        body { font-family: sans-serif; margin: 2em; }
+        .mode-container { border: 1px solid #ccc; padding: 15px; margin-bottom: 20px; border-radius: 5px; }
+        input { display: block; margin-bottom: 10px; padding: 5px; }
+        button { margin-top: 10px; }
+    </style>
 </head>
 <body>
-    <h1>Student Attendance Portal</h1>
-    
-    <div>
-        <h3>Device Registration (PoC)</h3>
-        <p>Enter your Roll Number to get your UID for this device.</p>
-        <input type="text" id="rollNumberInput" placeholder="e.g., 2301001">
-        <button id="loginBtn">Register Device</button>
-        <p>Your UID: <strong id="uid-display">Not set</strong></p>
+    <h1>Student Portal</h1>
+    <p id="status-message"></p>
+
+    <div id="register-mode" class="mode-container">
+        <h2>Register New Device</h2>
+        <input type="text" id="registerRollInput" placeholder="Enter Your Roll Number">
+        <input type="text" id="registerDeviceInput" placeholder="Enter a Name for this Device (e.g., MyPhone)">
+        <button id="registerBtn">Register This Device</button>
     </div>
-    <hr>
-    <div id="attendance-section" style="display:none;">
-        <h3>Mark Attendance</h3>
+
+    <div id="mark-mode" class="mode-container">
+        <h2>Mark Attendance</h2>
+        <input type="text" id="markRollInput" placeholder="Enter Your Roll Number">
+        <input type="text" id="markDeviceInput" placeholder="Enter Your Device Name">
         <input type="text" id="kCodeInput" placeholder="Enter K-CODE from professor">
         <button id="markAttendanceBtn">Mark Me Present</button>
     </div>
-
-    <p id="status-message"></p>
-
-    <script src="/static/js/student.js"></script>
 </body>
+<script src="/static/js/student.js"></script>
 </html>
