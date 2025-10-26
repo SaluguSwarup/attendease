@@ -17,6 +17,13 @@ DNSServer dnsServer;
 WebServer server(80);
 const byte DNS_PORT = 53;
 
+// ===== Function Declarations =====
+void generateGatewayToken();
+void startHotspot();
+void startDNSServer();
+void startWebServer();
+void handleRedirect();
+
 void setup() {
   Serial.begin(115200);
   delay(1000);
@@ -76,11 +83,20 @@ void startHotspot() {
   Serial.print("  IP: ");
   Serial.println(WiFi.softAPIP());
 
-  Serial.println("✓ DNS Server started");
+  Serial.println("✓ DNS Server ready");
+}
+
+// ===== Start DNS Server =====
+void startDNSServer() {
+  dnsServer.start(DNS_PORT, "*", WiFi.softAPIP());
+  Serial.println("✓ DNS Server started (Captive Portal Mode)");
 }
 
 // ===== Start Web Server =====
 void startWebServer() {
+  server.onNotFound(handleRedirect);
+  server.begin();
+  Serial.println("✓ Web Server started on port 80");
 }
 
 // ===== Redirect to Flask Server with Gateway Token =====
@@ -101,10 +117,4 @@ void handleRedirect() {
   server.sendHeader("Set-Cookie", setCookieHeader, true);
   server.sendHeader("Location", redirectUrl, true);
   server.send(302, "text/plain", "");
-}  server.onNotFound(handleRedirect);
-  server.begin();
-  Serial.println("✓ Web Server started on port 80");
-// ===== Start DNS Server =====
-void startDNSServer() {
-  dnsServer.start(DNS_PORT, "*", WiFi.softAPIP());
-
+}
