@@ -1,0 +1,110 @@
+#include <WiFi.h>
+#include <DNSServer.h>
+#include <WebServer.h>
+
+// ===== ESP32 Hotspot Settings =====
+const char* hotspot_ssid = "ClassAttendance_Prof001";
+const char* hotspot_password = "Class123";
+
+// ===== Your Flask Server URL =====
+const char* flask_server_url = "http://192.168.4.2:5000";
+
+// ===== Gateway Token (random, generated on startup) =====
+String gateway_token = "";
+
+// DNS and Web Server
+DNSServer dnsServer;
+WebServer server(80);
+const byte DNS_PORT = 53;
+
+void setup() {
+  Serial.begin(115200);
+  delay(1000);
+  
+  Serial.println("\n\n===== ESP32 Attendance Portal =====");
+  
+  // Generate unique gateway token on startup
+  generateGatewayToken();
+  
+  // Start hotspot
+  startHotspot();
+  
+  // Start DNS interception
+  startDNSServer();
+  
+  // Start web redirect server
+  startWebServer();
+  
+  Serial.println("\n✓ ESP32 Ready!");
+  Serial.print("Gateway Token: ");
+  Serial.println(gateway_token);
+}
+
+void loop() {
+  dnsServer.processNextRequest();
+  server.handleClient();
+  delay(10);
+}
+
+// ===== Generate Random Gateway Token =====
+void generateGatewayToken() {
+  String characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  
+  gateway_token = "gw_";
+  for (int i = 0; i < 32; i++) {
+    int randomIndex = random(characters.length());
+    gateway_token += characters[randomIndex];
+  }
+  
+  Serial.print("Generated Gateway Token: ");
+  Serial.println(gateway_token);
+}
+
+// ===== Start Hotspot =====
+void startHotspot() {
+  IPAddress local_ip(192, 168, 4, 1);
+  IPAddress gateway(192, 168, 4, 1);
+  IPAddress subnet(255, 255, 255, 0);
+  
+  WiFi.mode(WIFI_AP);
+  WiFi.softAPConfig(local_ip, gateway, subnet);
+  WiFi.softAP(hotspot_ssid, hotspot_password);
+  
+  Serial.println("✓ Hotspot started!");
+  Serial.print("  SSID: ");
+  Serial.println(hotspot_ssid);
+  Serial.print("  IP: ");
+  Serial.println(WiFi.softAPIP());
+
+  Serial.println("✓ DNS Server started");
+}
+
+// ===== Start Web Server =====
+void startWebServer() {
+}
+
+// ===== Redirect to Flask Server with Gateway Token =====
+void handleRedirect() {
+  // Build redirect URL with gateway token
+  String redirectUrl = flask_server_url;
+  redirectUrl += "/?gateway_token=";
+  redirectUrl += gateway_token;
+  
+  Serial.print("Redirecting to: ");
+  Serial.println(redirectUrl);
+  
+  // Set gateway token in cookie
+  String setCookieHeader = "gateway_token=";
+  setCookieHeader += gateway_token;
+  setCookieHeader += "; Max-Age=3600; Path=/";
+  
+  server.sendHeader("Set-Cookie", setCookieHeader, true);
+  server.sendHeader("Location", redirectUrl, true);
+  server.send(302, "text/plain", "");
+}  server.onNotFound(handleRedirect);
+  server.begin();
+  Serial.println("✓ Web Server started on port 80");
+// ===== Start DNS Server =====
+void startDNSServer() {
+  dnsServer.start(DNS_PORT, "*", WiFi.softAPIP());
+

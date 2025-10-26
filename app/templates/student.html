@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Student Portal</title>
+    <style>
+        body { font-family: sans-serif; margin: 2em; }
+        .container { border: 1px solid #ccc; padding: 15px; margin-bottom: 20px; border-radius: 5px; max-width: 400px; }
+        input { display: block; width: 95%; margin-bottom: 10px; padding: 8px; }
+        button { margin-top: 10px; padding: 10px 15px; }
+        h2 { border-bottom: 2px solid #eee; padding-bottom: 5px;}
+    </style>
+</head>
+<body>
+    <h1>Student Portal</h1>
+    <p id="status-message"></p>
+
+    <div class="container">
+        <h2>Register This Browser (One-Time Setup)</h2>
+        <p>Do this once per browser. This will link your Roll Number to this browser permanently.</p>
+        <input type="text" id="registerRollInput" placeholder="Enter Your Roll Number">
+        <button id="registerBtn">Register Browser</button>
+    </div>
+
+    <div class="container">
+        <h2>Mark Attendance</h2>
+        <p>After registering, use this section to mark your daily attendance.</p>
+        <input type="text" id="markRollInput" placeholder="Enter Your Roll Number">
+        <input type="text" id="kCodeInput" placeholder="Enter K-CODE from professor">
+        <button id="markAttendanceBtn">Mark Me Present</button>
+    </div>
+    
+    <br>
+    <a href="/">Back to Welcome Page</a>
+</body>
+<script src="/static/js/student.js"></script>
+</html>

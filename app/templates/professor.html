@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Professor Dashboard</title>
+    <style>
+        body { font-family: sans-serif; margin: 2em; }
+        .section { border: 1px solid #ccc; padding: 15px; margin-bottom: 20px; border-radius: 5px; }
+        input { display: block; margin-bottom: 10px; padding: 5px; }
+        a { display: inline-block; margin-top: 1em; }
+        #endSessionBtn { background-color: #f44336; color: white; margin-left: 10px; }
+    </style>
+</head>
+<body>
+    <h1>Professor Dashboard</h1>
+
+    <div class="section">
+        <h2>Start a New Session</h2>
+        <input type="text" id="profIdInput" placeholder="Enter Your Professor ID">
+        <input type="text" id="classCodeInput" placeholder="Enter Class Code (e.g., CS101)">
+        <button id="startSessionBtn">Start Class Session</button>
+        <button id="endSessionBtn" style="display:none;">End Current Session</button>
+        <h3>Generated K-CODE: <span id="k-code-display">None</span></h3>
+    </div>
+
+    <div class="section">
+        <h2>Manual Attendance</h2>
+        <p>Enter a student's roll number to mark them present manually. A session must be active.</p>
+        <input type="text" id="manualRollInput" placeholder="Enter Student Roll Number">
+        <button id="manualMarkBtn">Mark Present</button>
+        <p id="manual-status"></p>
+    </div>
+
+    <div>
+        <a href="/attendance" target="_blank">View Live Attendance</a>
+    </div>
+    <div>
+        <a href="/working-table" target="_blank">View Student UID Mapping</a>
+    </div>
+
+    <script src="/static/js/professor.js"></script>
+</body>
+</html>

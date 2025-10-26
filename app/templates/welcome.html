@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Welcome to AttendEase</title>
+    <style>
+        body { 
+            font-family: sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f4f4f9;
+        }
+        .container {
+            text-align: center;
+        }
+        .selection-box {
+            display: inline-block;
+            border: 2px solid #007BFF;
+            padding: 40px 60px;
+            margin: 0 20px;
+            border-radius: 10px;
+            text-decoration: none;
+            color: #007BFF;
+            font-size: 1.5em;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        .selection-box:hover {
+            background-color: #007BFF;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Welcome to AttendEase</h1>
+        <p>Please select your role:</p>
+        <div>
+            <a href="/professor" class="selection-box">
+                I am a <br><strong>Professor</strong>
+            </a>
+            <a href="/student" class="selection-box">
+                I am a <br><strong>Student</strong>
+            </a>
+        </div>
+    </div>
+</body>
+</html>
