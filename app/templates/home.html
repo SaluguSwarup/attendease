@@ -2,14 +2,17 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale-1.0">
     <title>Attendance Portal</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background-image: url('/static/images/bg.png');
+            background-size: cover; /* <--- REVERTED */
+            background-position: center;
+            background-attachment: fixed;
             min-height: 100vh;
             display: flex;
             align-items: center;
@@ -17,68 +20,89 @@
             padding: 20px;
         }
         
+        .page-wrapper {
+            text-align: center;
+        }
+
+        .emblem {
+            width: 80px;
+            height: auto;
+            opacity: 0.8;
+            margin-bottom: 20px;
+        }
+
         .container {
-            background: white;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
             border-radius: 12px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
             max-width: 450px;
             width: 100%;
             padding: 40px;
+            color: #ffffff;
         }
         
         .container h1 {
-            color: #333;
+            color: #ffffff;
             margin-bottom: 10px;
             font-size: 28px;
             text-align: center;
         }
         
         .container p {
-            color: #666;
+            color: #e0e0e0;
             text-align: center;
             margin-bottom: 30px;
             font-size: 14px;
         }
         
-        .form-section {
-            display: none;
-        }
-        
-        .form-section.active {
-            display: block;
-            animation: slideIn 0.3s ease-out;
-        }
+        .form-section { display: none; }
+        .form-section.active { display: block; animation: slideIn 0.3s ease-out; }
         
         @keyframes slideIn {
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
         }
         
-        .form-group {
-            margin-bottom: 20px;
-        }
+        .form-group { margin-bottom: 20px; }
         
         label {
             display: block;
             margin-bottom: 8px;
-            color: #333;
+            color: #f0f0f0;
             font-weight: 500;
             font-size: 14px;
+            text-align: left;
         }
         
         input {
             width: 100%;
             padding: 12px;
-            border: 2px solid #e0e0e0;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            background: rgba(0, 0, 0, 0.3);
             border-radius: 6px;
             font-size: 14px;
-            transition: border-color 0.2s;
+            color: #ffffff;
+            transition: border-color 0.2s, box-shadow 0.2s;
         }
         
         input:focus {
             outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            border-color: #a7bfff;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+        }
+        
+        .shake {
+            animation: shake 0.5s;
+            border-color: #ff5252 !important; /* Brighter red */
+        }
+        
+        @keyframes shake {
+            10%, 90% { transform: translateX(-1px); }
+            20%, 80% { transform: translateX(2px); }
+            30%, 50%, 70% { transform: translateX(-4px); }
+            40%, 60% { transform: translateX(4px); }
         }
         
         button {
@@ -96,12 +120,10 @@
         
         button:hover {
             transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
         }
         
-        button:active {
-            transform: translateY(0);
-        }
+        button:active { transform: translateY(0); }
         
         .status-message {
             padding: 12px;
@@ -109,142 +131,200 @@
             margin-bottom: 20px;
             font-size: 14px;
             display: none;
+            color: #ffffff;
+            border: none;
         }
         
-        .status-message.show {
-            display: block;
-        }
+        .status-message.show { display: block; }
         
         .status-message.success {
-            background: #e8f5e9;
-            color: #2e7d32;
-            border-left: 4px solid #4caf50;
+            background: rgba(76, 175, 80, 0.8); /* Translucent green */
         }
         
         .status-message.error {
-            background: #ffebee;
-            color: #c62828;
-            border-left: 4px solid #f44336;
+            background: rgba(244, 67, 54, 0.8); /* Translucent red */
         }
         
         .toggle-section {
             text-align: center;
             margin-top: 20px;
             font-size: 14px;
-            color: #666;
+            color: #e0e0e0;
         }
         
         .toggle-section button {
             background: none;
-            color: #667eea;
-            padding: 0;
+            color: #a7bfff; /* Light blue */
             font-weight: 600;
             text-decoration: underline;
-            cursor: pointer;
-            border: none;
-            font-size: 14px;
             padding-left: 5px;
             width: auto;
-            transform: none;
-            box-shadow: none;
         }
         
         .toggle-section button:hover {
-            color: #764ba2;
+            color: #ffffff;
             transform: none;
             box-shadow: none;
-        }
-        
-        .welcome-message {
-            background: #e3f2fd;
-            padding: 15px;
-            border-radius: 6px;
-            margin-bottom: 20px;
-            color: #1976d2;
-            font-size: 14px;
-            border-left: 4px solid #2196f3;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <!-- Registration Section -->
-        <div id="register-section" class="form-section active">
-            <h1>Welcome</h1>
-            <p>First time? Register your device with your roll number.</p>
-            
-            <div id="register-status" class="status-message"></div>
-            
-            <form onsubmit="registerStudent(event)">
-                <div class="form-group">
-                    <label for="register-roll">Roll Number</label>
-                    <input type="text" id="register-roll" placeholder="e.g., 2301001" required>
+    <div class="page-wrapper">
+        <img src="/static/images/emblem.png" alt="Emblem" class="emblem">
+        <div class="container">
+            <div id="attendance-section" class="form-section active">
+                <h1>Mark Attendance</h1>
+                <p>Enter your roll number. You must be connected to the class Wi-Fi.</p>
+                
+                <div id="attendance-status" class="status-message"></div>
+                
+                <form onsubmit="markAttendance(event)">
+                    <div class="form-group">
+                        <label for="mark-roll">Roll Number</label>
+                        <input type="text" id="mark-roll" placeholder="e.g., 2301001" required>
+                    </div>
+                    <button type="submit">Mark Me Present</button>
+                </form>
+                
+                <div class="toggle-section">
+                    First time?
+                    <button type="button" onclick="switchToRegister()">Register Device</button>
                 </div>
-                <button type="submit">Register Device</button>
-            </form>
-            
-            <div class="toggle-section">
-                Already registered?
-                <button type="button" onclick="switchToAttendance()">Mark Attendance</button>
             </div>
-        </div>
 
-        <!-- Attendance Section -->
-        <div id="attendance-section" class="form-section">
-            <h1>Mark Attendance</h1>
-            <p>Enter your details and the K-CODE from the whiteboard.</p>
-            
-            <div id="attendance-status" class="status-message"></div>
-            
-            <form onsubmit="markAttendance(event)">
-                <div class="form-group">
-                    <label for="mark-roll">Roll Number</label>
-                    <input type="text" id="mark-roll" placeholder="e.g., 2301001" required>
-                </div>
+            <div id="register-section" class="form-section">
+                <h1>Welcome</h1>
+                <p>First time? Register your device with your roll number.</p>
                 
-                <div class="form-group">
-                    <label for="k-code">K-CODE (from whiteboard)</label>
-                    <input type="text" id="k-code" placeholder="e.g., ABC123" style="text-transform: uppercase; font-weight: bold; font-size: 18px; letter-spacing: 2px;" required>
-                </div>
+                <div id="register-status" class="status-message"></div>
                 
-                <button type="submit">Mark Me Present</button>
-            </form>
-            
-            <div class="toggle-section">
-                First time?
-                <button type="button" onclick="switchToRegister()">Register Device</button>
+                <form onsubmit="registerStudent(event)">
+                    <div class="form-group">
+                        <label for="register-roll">Roll Number</label>
+                        <input type="text" id="register-roll" placeholder="e.g., 2301001" required>
+                    </div>
+
+                    <div class="form-group" id="override-code-group" style="display: none;">
+                        <label for="override-code">Professor's Override Code</label>
+                        <input type="text" id="override-code" placeholder="Enter 6-digit code">
+                    </div>
+
+                    <button type="submit">Register Device</button>
+                </form>
+                
+                <div class="toggle-section">
+                    Already registered?
+                    <button type="button" onclick="switchToAttendance()">Mark Attendance</button>
+                </div>
             </div>
         </div>
     </div>
 
     <script>
+        const overrideGroup = document.getElementById('override-code-group');
+        const overrideInput = document.getElementById('override-code');
+        const registerRollInput = document.getElementById('register-roll');
+        const markRollInput = document.getElementById('mark-roll');
+        const registerStatus = document.getElementById('register-status');
+        const attendanceStatus = document.getElementById('attendance-status');
+        const isNumeric = /^\d+$/;
+
+        function clearMessage(element) {
+            element.textContent = '';
+            element.className = 'status-message';
+        }
+
+        function shakeElement(element) {
+            element.classList.add('shake');
+            setTimeout(() => {
+                element.classList.remove('shake');
+            }, 500); 
+        }
+
         function switchToRegister() {
             document.getElementById('register-section').classList.add('active');
             document.getElementById('attendance-section').classList.remove('active');
+            overrideGroup.style.display = 'none';
+            overrideInput.value = '';
+            clearMessage(attendanceStatus);
         }
 
         function switchToAttendance() {
             document.getElementById('register-section').classList.remove('active');
             document.getElementById('attendance-section').classList.add('active');
+            overrideGroup.style.display = 'none';
+            overrideInput.value = '';
+            clearMessage(registerStatus);
         }
 
-        function showMessage(elementId, message, isSuccess) {
-            const el = document.getElementById(elementId);
-            el.textContent = message;
-            el.className = `status-message show ${isSuccess ? 'success' : 'error'}`;
+        function showMessage(element, message, isSuccess) {
+            element.textContent = message;
+            element.className = `status-message show ${isSuccess ? 'success' : 'error'}`;
         }
 
         async function registerStudent(e) {
             e.preventDefault();
-            const roll = document.getElementById('register-roll').value.trim();
+            clearMessage(registerStatus);
             
-            if (!roll) {
-                showMessage('register-status', 'Please enter your roll number.', false);
+            const roll = registerRollInput.value.trim();
+            const overrideCode = overrideInput.value.trim();
+            
+            if (!roll || !isNumeric.test(roll)) {
+                showMessage(registerStatus, 'Please enter a valid Roll Number (digits only).', false);
+                shakeElement(registerRollInput);
                 return;
+            }
+
+            if (overrideGroup.style.display === 'block' && overrideCode && !isNumeric.test(overrideCode)) {
+                 showMessage(registerStatus, 'Override code must be 6 digits.', false);
+                 shakeElement(overrideInput);
+                 return;
             }
 
             try {
                 const response = await fetch('/api/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        roll_no: roll,
+                        override_code: overrideCode
+                    })
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    showMessage(registerStatus, result.message + ' You can now mark attendance.', true);
+                    registerRollInput.value = '';
+                    overrideInput.value = '';
+                    overrideGroup.style.display = 'none';
+                    setTimeout(() => switchToAttendance(), 1500);
+                
+                } else {
+                    showMessage(registerStatus, result.message, false);
+                    if (result.rebind === true) {
+                        overrideGroup.style.display = 'block';
+                    }
+                }
+            } catch (error) {
+                showMessage(registerStatus, 'Network error. Please try again.', false);
+            }
+        }
+
+        async function markAttendance(e) {
+            e.preventDefault();
+            clearMessage(attendanceStatus); 
+
+            const roll = markRollInput.value.trim();
+            
+            if (!roll || !isNumeric.test(roll)) {
+                showMessage(attendanceStatus, 'Please enter a valid Roll Number (digits only).', false);
+                shakeElement(markRollInput);
+                return;
+            }
+
+            try {
+                const response = await fetch('/attendance/mark', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ roll_no: roll })
@@ -253,45 +333,13 @@
                 const result = await response.json();
                 
                 if (result.success) {
-                    showMessage('register-status', result.message + ' You can now mark attendance.', true);
-                    document.getElementById('register-roll').value = '';
-                    setTimeout(() => switchToAttendance(), 1500);
+                    showMessage(attendanceStatus, result.message, true);
+                    markRollInput.value = '';
                 } else {
-                    showMessage('register-status', result.message, false);
+                    showMessage(attendanceStatus, result.message, false);
                 }
             } catch (error) {
-                showMessage('register-status', 'Network error. Please try again.', false);
-            }
-        }
-
-        async function markAttendance(e) {
-            e.preventDefault();
-            const roll = document.getElementById('mark-roll').value.trim();
-            const kCode = document.getElementById('k-code').value.trim().toUpperCase();
-            
-            if (!roll || !kCode) {
-                showMessage('attendance-status', 'Please enter both roll number and K-CODE.', false);
-                return;
-            }
-
-            try {
-                const response = await fetch('/attendance/mark', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ roll_no: roll, k_code: kCode })
-                });
-
-                const result = await response.json();
-                
-                if (result.success) {
-                    showMessage('attendance-status', result.message, true);
-                    document.getElementById('mark-roll').value = '';
-                    document.getElementById('k-code').value = '';
-                } else {
-                    showMessage('attendance-status', result.message, false);
-                }
-            } catch (error) {
-                showMessage('attendance-status', 'Network error. Please try again.', false);
+                showMessage(attendanceStatus, 'Network error. Please try again.', false);
             }
         }
     </script>

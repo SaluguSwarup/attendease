@@ -4,38 +4,133 @@
     <meta charset="UTF-8">
     <title>Professor Dashboard</title>
     <style>
-        body { font-family: sans-serif; margin: 2em; }
-        .section { border: 1px solid #ccc; padding: 15px; margin-bottom: 20px; border-radius: 5px; }
-        input { display: block; margin-bottom: 10px; padding: 5px; }
-        a { display: inline-block; margin-top: 1em; }
-        #endSessionBtn { background-color: #f44336; color: white; margin-left: 10px; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            margin: 0;
+            padding: 2em;
+            background-image: url('/static/images/bg.png');
+            background-size: cover; /* <--- REVERTED */
+            background-position: center;
+            background-attachment: fixed;
+            color: #ffffff;
+            min-height: 100vh;
+        }
+        .header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .emblem {
+            width: 60px;
+            height: auto;
+            opacity: 0.8;
+            margin-right: 20px;
+        }
+        h1 {
+            font-size: 2.5em;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .section { 
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 25px; 
+            margin-bottom: 20px; 
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+        h2 {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+            padding-bottom: 10px;
+            margin-top: 0;
+        }
+        p { color: #e0e0e0; }
+        input { 
+            display: block; 
+            margin-bottom: 10px; 
+            padding: 10px;
+            width: 95%;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 6px;
+            color: #ffffff;
+        }
+        input:focus {
+            outline: none;
+            border-color: #a7bfff;
+        }
+        button {
+            padding: 10px 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+        a { 
+            display: inline-block; 
+            margin-top: 1em; 
+            color: #a7bfff;
+            font-weight: 600;
+            font-size: 1.1em;
+        }
+        #endSessionBtn { background: #c62828; }
+        #k-code-display { font-size: 1.1em; font-weight: bold; }
+        #override-code-display {
+            font-size: 1.5em;
+            color: #ff8a80; /* Light red */
+            font-weight: bold;
+            letter-spacing: 2px;
+        }
+        #manual-status { font-weight: bold; }
     </style>
 </head>
 <body>
-    <h1>Professor Dashboard</h1>
+    <div class="container">
+        <div class="header">
+            <img src="/static/images/emblem.png" alt="Emblem" class="emblem">
+            <h1>Professor Dashboard</h1>
+        </div>
 
-    <div class="section">
-        <h2>Start a New Session</h2>
-        <input type="text" id="profIdInput" placeholder="Enter Your Professor ID">
-        <input type="text" id="classCodeInput" placeholder="Enter Class Code (e.g., CS101)">
-        <button id="startSessionBtn">Start Class Session</button>
-        <button id="endSessionBtn" style="display:none;">End Current Session</button>
-        <h3>Generated K-CODE: <span id="k-code-display">None</span></h3>
-    </div>
+        <div class="section">
+            <h2>Start a New Session</h2>
+            <p>Connect to the ESP32 Wi-Fi first, then start the session.</p>
+            <input type="text" id="profIdInput" placeholder="Enter Your Professor ID">
+            <input type="text" id="classCodeInput" placeholder="Enter Class Code (e.g., CS101)">
+            <button id="startSessionBtn">Start Class Session</button>
+            <button id="endSessionBtn" style="display:none;">End Current Session</button>
+            <h3>Session Status: <span id="k-code-display">Inactive</span></h3>
+        </div>
 
-    <div class="section">
-        <h2>Manual Attendance</h2>
-        <p>Enter a student's roll number to mark them present manually. A session must be active.</p>
-        <input type="text" id="manualRollInput" placeholder="Enter Student Roll Number">
-        <button id="manualMarkBtn">Mark Present</button>
-        <p id="manual-status"></p>
-    </div>
+        <div class="section">
+            <h2>Manual Attendance</h2>
+            <p>Enter a student's roll number to mark them present manually. A session must be active.</p>
+            <input type="text" id="manualRollInput" placeholder="Enter Student Roll Number">
+            <button id="manualMarkBtn">Mark Present</button>
+            <p id="manual-status"></p>
+        </div>
 
-    <div>
-        <a href="/attendance" target="_blank">View Live Attendance</a>
-    </div>
-    <div>
-        <a href="/working-table" target="_blank">View Student UID Mapping</a>
+        <div class="section">
+            <h2>Device Re-Registration</h2>
+            <p>If a student needs to use a new device, generate a one-time code. A session must be active.</p>
+            <button id="generateOverrideBtn">Generate Override Code</button>
+            <h3>Override Code: <span id="override-code-display">None</span></h3>
+        </div>
+
+        <div>
+            <a href="/attendance" target="_blank">View Live Attendance</a> |
+            <a href="/working-table" target="_blank">View Student UID Mapping</a>
+        </div>
     </div>
 
     <script src="/static/js/professor.js"></script>

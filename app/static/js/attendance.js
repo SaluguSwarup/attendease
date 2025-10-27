@@ -26,9 +26,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 attendeeListHtml = session.attendees.map(roll_no => `<tr><td>${roll_no}</td></tr>`).join('');
             }
             
+            // This is the updated HTML: The K-CODE line is removed.
             tableContainer.innerHTML = `
                 <h3>Class: ${session.class_code} (Prof: ${session.prof_id})</h3>
-                <p><strong>K-CODE: ${kCode}</strong></p>
                 <table>
                     <thead>
                         <tr><th>Attended Roll Numbers</th></tr>

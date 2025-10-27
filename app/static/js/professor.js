@@ -5,12 +5,23 @@ document.addEventListener('DOMContentLoaded', () => {
     const kCodeDisplay = document.getElementById('k-code-display');
     const profIdInput = document.getElementById('profIdInput');
     const classCodeInput = document.getElementById('classCodeInput');
-    let activeKCode = null;
+    let activeKCode = null; // We still store the token here, just don't show it
 
     // Manual Mark elements
     const manualMarkBtn = document.getElementById('manualMarkBtn');
     const manualRollInput = document.getElementById('manualRollInput');
     const manualStatus = document.getElementById('manual-status');
+
+    // Override Code elements
+    const generateOverrideBtn = document.getElementById('generateOverrideBtn');
+    const overrideCodeDisplay = document.getElementById('override-code-display');
+
+    // Helper function to read a cookie
+    function getCookie(name) {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop().split(';').shift();
+    }
 
     // Event listener for starting a session
     startBtn.addEventListener('click', async () => {
@@ -22,6 +33,12 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
+        const gatewayToken = getCookie('gateway_token');
+        if (!gatewayToken) {
+            alert('Error: Not connected to the Attendance Wi-Fi. Please connect to the ESP32 hotspot and try again.');
+            return;
+        }
+
         const response = await fetch('/session/start', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
@@ -30,8 +47,9 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const data = await response.json();
         if (data.success) {
-            activeKCode = data.k_code;
-            kCodeDisplay.textContent = activeKCode;
+            activeKCode = data.k_code; // Save the token internally
+            kCodeDisplay.textContent = "Active"; // Display "Active" to the user
+            kCodeDisplay.style.color = 'green';
             startBtn.disabled = true;
             endBtn.style.display = 'inline-block'; // Show the end button
         } else {
@@ -49,14 +67,16 @@ document.addEventListener('DOMContentLoaded', () => {
         const response = await fetch('/session/end', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ k_code: activeKCode })
+            body: JSON.stringify({ k_code: activeKCode }) // Send the stored token
         });
 
         const result = await response.json();
         if (result.success) {
             alert(result.message);
             // Reset the UI
-            kCodeDisplay.textContent = 'None';
+            kCodeDisplay.textContent = "Inactive";
+            kCodeDisplay.style.color = '#555';
+            overrideCodeDisplay.textContent = "None"; // Clear override code
             startBtn.disabled = false;
             endBtn.style.display = 'none';
             activeKCode = null;
@@ -94,6 +114,26 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             manualStatus.textContent = `Error: ${result.message}`;
             manualStatus.style.color = 'red';
+        }
+    });
+
+    // Event listener for generating override code
+    generateOverrideBtn.addEventListener('click', async () => {
+        if (!activeKCode) {
+            alert('You must start a session first.');
+            return;
+        }
+
+        // The gateway_token is sent via cookie, so we just POST
+        const response = await fetch('/session/generate-override', {
+            method: 'POST'
+        });
+
+        const result = await response.json();
+        if (result.success) {
+            overrideCodeDisplay.textContent = result.override_code;
+        } else {
+            alert(`Error: ${result.message}`);
         }
     });
 });

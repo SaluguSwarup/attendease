@@ -14,41 +14,73 @@ def get_db_connection():
     conn.row_factory = sqlite3.Row
     return conn
 
-def register_student(roll_no):
+def register_student(roll_no, gateway_token, override_code):
     """
-    One-time registration: Creates a student with a UUID if they don't exist.
-    Returns the UUID to be set as a permanent cookie.
+    Handles new registration or re-binding of an existing student to a new device.
     """
     conn = get_db_connection()
     student = conn.execute('SELECT uid FROM working_table WHERE roll_no = ?', (roll_no,)).fetchone()
     
-    if student:
-        # Student already registered
+    if not student:
+        # CASE 1: New student. Register them as normal.
+        new_uid = f"{uuid.uuid4().hex[:12]}"
+        conn.execute('INSERT INTO working_table (roll_no, uid) VALUES (?, ?)', (roll_no, new_uid))
+        conn.commit()
         conn.close()
         return {
             "success": True,
-            "message": f"Welcome back! Roll Number {roll_no} is already registered.",
-            "uid": student['uid']
+            "message": f"Registration successful! Roll Number {roll_no} registered.",
+            "uid": new_uid
+        }
+
+    # --- Student Already Exists ---
+
+    if not override_code:
+        # CASE 2: Existing student, first attempt.
+        # Tell the frontend to ask for an override code.
+        conn.close()
+        return {
+            "success": False,
+            "message": f"{roll_no} is already registered. Ask professor for an Override Code to use this new device.",
+            "rebind": True # Special flag for the frontend
         }
     
-    # Create new student with unique UUID
+    # CASE 3 & 4: Existing student, attempting with an override code.
+    
+    # Check if the override code is valid for this session
+    if (gateway_token not in sessions or 
+        'override_code' not in sessions[gateway_token] or
+        sessions[gateway_token]['override_code'] != override_code):
+        
+        conn.close()
+        return {
+            "success": False,
+            "message": "Invalid or expired Override Code. Ask the professor for a new one."
+        }
+
+    # CASE 4: Success! The override code is valid.
+    # We generate a NEW UID and overwrite the old one in the database.
+    # This invalidates the old device's cookie.
     new_uid = f"{uuid.uuid4().hex[:12]}"
-    conn.execute('INSERT INTO working_table (roll_no, uid) VALUES (?, ?)', (roll_no, new_uid))
+    conn.execute('UPDATE working_table SET uid = ? WHERE roll_no = ?', (new_uid, roll_no))
     conn.commit()
     conn.close()
     
+    # Invalidate the used override code
+    sessions[gateway_token].pop('override_code', None)
+    
     return {
         "success": True,
-        "message": f"Registration successful! Roll Number {roll_no} registered.",
+        "message": f"Device re-bind successful! {roll_no} is now registered to this device.",
         "uid": new_uid
     }
 
-def start_new_session(prof_id, class_code):
+
+def start_new_session(prof_id, class_code, k_code):
     """
-    Professor starts a session. Generates a K code that is written on whiteboard.
-    K code is the only thing transmitted digitally (and locally over LAN).
+    Professor starts a session.
+    The K-CODE is the gateway_token from the ESP32.
     """
-    k_code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
     sessions[k_code] = {
         "prof_id": prof_id,
         "class_code": class_code,
@@ -57,18 +89,25 @@ def start_new_session(prof_id, class_code):
     }
     return k_code
 
+def generate_override_code(gateway_token):
+    """
+    Generates a 6-digit code for device re-binding
+    and stores it in the active session.
+    """
+    if gateway_token not in sessions or not sessions[gateway_token]["active"]:
+        return None
+    
+    code = ''.join(random.choices(string.digits, k=6))
+    sessions[gateway_token]["override_code"] = code
+    return code
+
 def mark_attendance(uuid_from_cookie, roll_no_from_form, k_code):
     """
-    Student marks attendance. Performs the 3-way check:
-    1. Is the K-CODE valid and active?
-    2. Does the UUID cookie match the roll number in the database?
-    3. Is this student already marked for this session?
-    
-    If all checks pass, student is marked present.
+    Student marks attendance. Performs the 3-way check.
     """
-    # 1. Validate K-CODE
+    # 1. Validate K-CODE (which is the gateway_token from the cookie)
     if k_code not in sessions or not sessions[k_code]["active"]:
-        return False, "Invalid or expired K-CODE. Check with your professor."
+        return False, "Invalid or expired session. Are you connected to the right Wi-Fi?"
     
     # 2. Validate UUID matches roll number
     conn = get_db_connection()
@@ -80,7 +119,8 @@ def mark_attendance(uuid_from_cookie, roll_no_from_form, k_code):
     
     if student['uid'] != uuid_from_cookie:
         conn.close()
-        return False, "UUID mismatch. You cannot mark attendance for another student. (This would require their phone.)"
+        # This error is now critical. It means their cookie is from an old device.
+        return False, "UUID mismatch. Your device is not registered. Please re-register this device (you will need an Override Code from the professor)."
     
     # 3. Check if already marked
     if roll_no_from_form in sessions[k_code]["attendees"]:
@@ -101,18 +141,20 @@ def mark_attendance(uuid_from_cookie, roll_no_from_form, k_code):
 
 def end_session(k_code):
     """
-    Professor ends session. Locks the session and makes K-CODE invalid.
-    Session data persists in attendance_history for permanent records.
+    Professor ends session. Locks the session.
     """
     if k_code not in sessions:
         return False, "Session not found."
     
+    # Clear override code if one exists
+    sessions[k_code].pop('override_code', None)
     sessions[k_code]["active"] = False
-    return True, f"Session {k_code} ended. Attendance locked. Data saved to permanent records."
+    
+    return True, f"Session {k_code} ended. Attendance locked."
 
 def manual_mark_attendance(roll_no, k_code):
     """
-    Professor can manually mark a student present (e.g., for late arrivals).
+    Professor can manually mark a student present.
     """
     if k_code not in sessions or not sessions[k_code]["active"]:
         return False, "Invalid or expired K-CODE. Session not active."
