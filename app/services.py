@@ -5,8 +5,30 @@ import hashlib
 import os
 import uuid
 from flask import current_app
+# --- NEW IMPORTS ---
+from werkzeug.security import generate_password_hash, check_password_hash
 
 sessions = {}
+
+# --- NEW PROFESSOR LOGIC ---
+# Passwords are NOT stored. Only the HASH is stored.
+PROFESSOR_CREDS = {
+    'Swarup': generate_password_hash('12345'),
+    'Prasenjit Chanak Sir': generate_password_hash('12345')
+}
+
+def verify_professor(name, password):
+    """
+    Securely checks the professor's name and password.
+    """
+    if name not in PROFESSOR_CREDS:
+        return False
+    
+    # Check the provided password against the stored hash
+    return check_password_hash(PROFESSOR_CREDS[name], password)
+
+# --- END NEW PROFESSOR LOGIC ---
+
 
 def get_db_connection():
     db_path = os.path.join(current_app.instance_path, 'database.db')
@@ -37,7 +59,6 @@ def register_student(roll_no, gateway_token, override_code):
 
     if not override_code:
         # CASE 2: Existing student, first attempt.
-        # Tell the frontend to ask for an override code.
         conn.close()
         return {
             "success": False,
@@ -47,7 +68,6 @@ def register_student(roll_no, gateway_token, override_code):
     
     # CASE 3 & 4: Existing student, attempting with an override code.
     
-    # Check if the override code is valid for this session
     if (gateway_token not in sessions or 
         'override_code' not in sessions[gateway_token] or
         sessions[gateway_token]['override_code'] != override_code):
@@ -59,14 +79,11 @@ def register_student(roll_no, gateway_token, override_code):
         }
 
     # CASE 4: Success! The override code is valid.
-    # We generate a NEW UID and overwrite the old one in the database.
-    # This invalidates the old device's cookie.
     new_uid = f"{uuid.uuid4().hex[:12]}"
     conn.execute('UPDATE working_table SET uid = ? WHERE roll_no = ?', (new_uid, roll_no))
     conn.commit()
     conn.close()
     
-    # Invalidate the used override code
     sessions[gateway_token].pop('override_code', None)
     
     return {
@@ -78,22 +95,18 @@ def register_student(roll_no, gateway_token, override_code):
 
 def start_new_session(prof_id, class_code, k_code):
     """
-    Professor starts a session.
-    The K-CODE is the gateway_token from the ESP32.
+    k_code is the gateway_token.
     """
     sessions[k_code] = {
         "prof_id": prof_id,
         "class_code": class_code,
         "attendees": set(),
-        "active": True
+        "active": True,
+        "marked_gateways": set() # <-- FIX: Set to track used devices
     }
     return k_code
 
 def generate_override_code(gateway_token):
-    """
-    Generates a 6-digit code for device re-binding
-    and stores it in the active session.
-    """
     if gateway_token not in sessions or not sessions[gateway_token]["active"]:
         return None
     
@@ -103,13 +116,17 @@ def generate_override_code(gateway_token):
 
 def mark_attendance(uuid_from_cookie, roll_no_from_form, k_code):
     """
-    Student marks attendance. Performs the 3-way check.
+    k_code is the gateway_token.
     """
-    # 1. Validate K-CODE (which is the gateway_token from the cookie)
+    # 1. Validate Session
     if k_code not in sessions or not sessions[k_code]["active"]:
         return False, "Invalid or expired session. Are you connected to the right Wi-Fi?"
     
-    # 2. Validate UUID matches roll number
+    # 2. FIX: Validate Device (One Mark Per Device)
+    if k_code in sessions[k_code]["marked_gateways"]:
+        return False, "This device has already marked attendance for this session."
+    
+    # 3. Validate Student
     conn = get_db_connection()
     student = conn.execute('SELECT uid FROM working_table WHERE roll_no = ?', (roll_no_from_form,)).fetchone()
     
@@ -117,17 +134,19 @@ def mark_attendance(uuid_from_cookie, roll_no_from_form, k_code):
         conn.close()
         return False, f"Roll Number {roll_no_from_form} not found in system. Register first."
     
+    # 4. Validate UID
     if student['uid'] != uuid_from_cookie:
         conn.close()
-        # This error is now critical. It means their cookie is from an old device.
         return False, "UUID mismatch. Your device is not registered. Please re-register this device (you will need an Override Code from the professor)."
     
-    # 3. Check if already marked
+    # 5. Validate for Duplicates (Student)
     if roll_no_from_form in sessions[k_code]["attendees"]:
         conn.close()
         return False, "You are already marked present for this session."
     
-    # All checks passed: Mark attendance
+    # --- All Checks Passed ---
+    
+    # A. Mark attendance
     class_code = sessions[k_code]["class_code"]
     conn.execute(
         'INSERT INTO attendance_history (roll_no, course) VALUES (?, ?)',
@@ -136,26 +155,22 @@ def mark_attendance(uuid_from_cookie, roll_no_from_form, k_code):
     conn.commit()
     conn.close()
     
+    # B. Add to sets to prevent re-use
     sessions[k_code]["attendees"].add(roll_no_from_form)
+    sessions[k_code]["marked_gateways"].add(k_code) # <-- FIX: "Use up" this device
+    
     return True, f"Attendance marked for {roll_no_from_form} in {class_code}. ✓"
 
 def end_session(k_code):
-    """
-    Professor ends session. Locks the session.
-    """
     if k_code not in sessions:
         return False, "Session not found."
     
-    # Clear override code if one exists
     sessions[k_code].pop('override_code', None)
     sessions[k_code]["active"] = False
     
     return True, f"Session {k_code} ended. Attendance locked."
 
 def manual_mark_attendance(roll_no, k_code):
-    """
-    Professor can manually mark a student present.
-    """
     if k_code not in sessions or not sessions[k_code]["active"]:
         return False, "Invalid or expired K-CODE. Session not active."
     
@@ -182,9 +197,6 @@ def manual_mark_attendance(roll_no, k_code):
     return True, f"{roll_no} manually marked present."
 
 def get_all_active_sessions():
-    """
-    Return all active sessions for the attendance dashboard.
-    """
     result = {}
     for k, v in sessions.items():
         if v["active"]:
@@ -196,9 +208,6 @@ def get_all_active_sessions():
     return result
 
 def get_working_table_data():
-    """
-    Retrieve all students and their UIDs for the admin view.
-    """
     conn = get_db_connection()
     students = conn.execute('SELECT roll_no, uid FROM working_table ORDER BY roll_no').fetchall()
     conn.close()

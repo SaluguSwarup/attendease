@@ -13,8 +13,6 @@ def init_db(app):
     db = sqlite3.connect(db_path)
     cursor = db.cursor()
 
-# --- THIS IS THE SIMPLIFIED TABLE STRUCTURE ---
-# It no longer includes the device_token_hash column
     cursor.execute('''
 CREATE TABLE IF NOT EXISTS working_table (
     roll_no TEXT PRIMARY KEY,
@@ -44,8 +42,14 @@ CREATE TABLE IF NOT EXISTS working_table (
 
 def create_app():
     app = Flask(__name__)
+    
+    # --- NEW ---
+    # A secret key is required for Flask sessions (login)
+    app.config['SECRET_KEY'] = 'a-very-strong-and-random-secret-key-12345'
+    
     with app.app_context():
         init_db(app)
+        
     from . import routes
     app.register_blueprint(routes.bp)
     return app

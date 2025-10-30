@@ -9,7 +9,7 @@
             margin: 0;
             padding: 2em;
             background-image: url('/static/images/bg.png');
-            background-size: cover; /* <--- REVERTED */
+            background-size: cover;
             background-position: center;
             background-attachment: fixed;
             color: #ffffff;
@@ -18,7 +18,12 @@
         .header {
             display: flex;
             align-items: center;
+            justify-content: space-between;
             margin-bottom: 20px;
+        }
+        .header-title {
+            display: flex;
+            align-items: center;
         }
         .emblem {
             width: 60px;
@@ -63,6 +68,12 @@
             outline: none;
             border-color: #a7bfff;
         }
+        input:read-only {
+            background: rgba(0, 0, 0, 0.5);
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+
         button {
             padding: 10px 15px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -84,32 +95,86 @@
             font-weight: 600;
             font-size: 1.1em;
         }
+        
+        /* --- NEW LOGOUT BUTTON STYLE --- */
+        a.logout {
+            background: #c62828;
+            color: white;
+            font-size: 0.9em;
+            font-weight: 600;
+            padding: 10px 15px;
+            border-radius: 6px;
+            text-decoration: none;
+            margin-top: 0;
+            transition: background-color 0.2s;
+        }
+        a.logout:hover {
+            background: #d32f2f;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+        
         #endSessionBtn { background: #c62828; }
         #k-code-display { font-size: 1.1em; font-weight: bold; }
         #override-code-display {
             font-size: 1.5em;
-            color: #ff8a80; /* Light red */
+            color: #ff8a80;
             font-weight: bold;
             letter-spacing: 2px;
         }
         #manual-status { font-weight: bold; }
+
+        /* --- NEW STYLES FOR EMBEDDED TABLE --- */
+        .session-table { 
+            margin-bottom: 20px; 
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        th, td { 
+            text-align: left; 
+            padding: 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        th {
+            background-color: rgba(0, 0, 0, 0.3);
+            font-size: 1.1em;
+        }
+        tr:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <img src="/static/images/emblem.png" alt="Emblem" class="emblem">
-            <h1>Professor Dashboard</h1>
+            <div class="header-title">
+                <img src="/static/images/emblem.png" alt="Emblem" class="emblem">
+                <h1>Welcome, {{ professor_name }}.Kindly logout and disconnect ESP-32 once the session end</h1>
+            </div>
+            <a href="{{ url_for('main.logout') }}" class="logout">Logout</a>
         </div>
 
         <div class="section">
             <h2>Start a New Session</h2>
-            <p>Connect to the ESP32 Wi-Fi first, then start the session.</p>
-            <input type="text" id="profIdInput" placeholder="Enter Your Professor ID">
+            
+            <input type="hidden" id="profIdInput" value="{{ professor_name }}">
+            
+            <label for="classCodeInput">Class Code</label>
             <input type="text" id="classCodeInput" placeholder="Enter Class Code (e.g., CS101)">
+            
             <button id="startSessionBtn">Start Class Session</button>
             <button id="endSessionBtn" style="display:none;">End Current Session</button>
             <h3>Session Status: <span id="k-code-display">Inactive</span></h3>
+        </div>
+
+        <div class="section">
+            <h2>Live Attendance</h2>
+            <div id="sessions-container">
+                <p>No active sessions.</p>
+            </div>
         </div>
 
         <div class="section">
@@ -122,17 +187,14 @@
 
         <div class="section">
             <h2>Device Re-Registration</h2>
-            <p>If a student needs to use a new device, generate a one-time code. A session must be active.</p>
+            <p>If a students need to use a new device,please review their details and then generate a one-time code for each student and provide them. A session must be active.</p>
             <button id="generateOverrideBtn">Generate Override Code</button>
             <h3>Override Code: <span id="override-code-display">None</span></h3>
         </div>
-
-        <div>
-            <a href="/attendance" target="_blank">View Live Attendance</a> |
-            <a href="/working-table" target="_blank">View Student UID Mapping</a>
+        
         </div>
-    </div>
 
     <script src="/static/js/professor.js"></script>
+    <script src="/static/js/attendance.js"></script>
 </body>
 </html>

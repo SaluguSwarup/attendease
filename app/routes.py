@@ -1,4 +1,4 @@
-from flask import Blueprint, request, jsonify, render_template, make_response
+from flask import Blueprint, request, jsonify, render_template, make_response, session, redirect, url_for, flash
 from . import services
 
 bp = Blueprint('main', __name__)
@@ -12,9 +12,50 @@ def index():
     """
     return render_template('welcome.html')
 
-@bp.route('/professor')
+@bp.route('/professor', methods=['GET', 'POST'])
+def professor_login():
+    """
+    Professor login page.
+    GET: Shows the login form.
+    POST: Handles the login attempt.
+    """
+    if request.method == 'POST':
+        name = request.form.get('name')
+        password = request.form.get('password')
+        
+        if services.verify_professor(name, password):
+            # Login success: store name in session
+            session['professor_name'] = name
+            return redirect(url_for('main.professor_dashboard'))
+        else:
+            # Login failed: show error
+            flash('Invalid name or password.', 'error')
+            return redirect(url_for('main.professor_login'))
+            
+    # GET request
+    return render_template('professor_login.html')
+
+@bp.route('/dashboard')
 def professor_dashboard():
-    return render_template('professor.html')
+    """
+    The main professor dashboard, protected by login.
+    """
+    # Check if professor is logged in
+    if 'professor_name' not in session:
+        return redirect(url_for('main.professor_login'))
+        
+    # Pass the logged-in professor's name to the template
+    name = session['professor_name']
+    return render_template('professor.html', professor_name=name)
+
+@bp.route('/logout')
+def logout():
+    """
+    Logs the professor out by clearing the session.
+    """
+    session.pop('professor_name', None)
+    return redirect(url_for('main.professor_login'))
+
 
 @bp.route('/student')
 def student_portal():
@@ -26,11 +67,15 @@ def student_portal():
 
 @bp.route('/working-table')
 def working_table_page():
+    if 'professor_name' not in session:
+        return redirect(url_for('main.professor_login'))
     student_data = services.get_working_table_data()
     return render_template('working_table.html', students=student_data)
 
 @bp.route('/attendance')
 def attendance_page():
+    if 'professor_name' not in session:
+        return redirect(url_for('main.professor_login'))
     return render_template('attendance.html')
 
 # --- API Endpoint Routes ---
@@ -45,7 +90,6 @@ def register():
     roll_no = data.get('roll_no', '').strip()
     override_code = data.get('override_code', '').strip()
     
-    # Get the session token from the cookie
     gateway_token = request.cookies.get('gateway_token')
 
     if not roll_no:
@@ -54,17 +98,11 @@ def register():
     if not gateway_token:
          return jsonify({"success": False, "message": "Not connected to session. Connect to the class Wi-Fi."}), 400
 
-    # Call the updated service function
     result = services.register_student(roll_no, gateway_token, override_code)
     
     if not result["success"]:
-        # This will return "Already registered" or "Invalid code"
-        # The 'rebind' flag will be handled by the frontend
         return jsonify(result), 400
     
-    # --- Success ---
-    # This block runs for BOTH a new registration AND a successful rebind.
-    # We set the new UUID as the cookie.
     response = make_response(jsonify({
         "success": True,
         "message": result["message"]
@@ -85,7 +123,7 @@ def mark_attendance():
     Student marks attendance.
     """
     uuid_from_cookie = request.cookies.get('student_uuid')
-    k_code = request.cookies.get('gateway_token')
+    k_code = request.cookies.get('gateway_token') # k_code is the gateway_token
     
     data = request.get_json()
     roll_no = data.get('roll_no', '').strip()
@@ -96,6 +134,7 @@ def mark_attendance():
             "message": "Missing data. You must register first and be connected to the class Wi-Fi."
         }), 400
     
+    # The service function has the new "One Mark Per Device" logic
     success, message = services.mark_attendance(uuid_from_cookie, roll_no, k_code)
     return jsonify({"success": success, "message": message})
 
@@ -104,6 +143,9 @@ def start_session():
     """
     Professor starts a new attendance session.
     """
+    if 'professor_name' not in session:
+        return jsonify({"success": False, "message": "Not authenticated."}), 401
+        
     k_code = request.cookies.get('gateway_token')
     
     data = request.get_json()
@@ -132,6 +174,9 @@ def generate_override():
     """
     Professor generates a one-time override code for re-registration.
     """
+    if 'professor_name' not in session:
+        return jsonify({"success": False, "message": "Not authenticated."}), 401
+        
     gateway_token = request.cookies.get('gateway_token')
     
     if not gateway_token:
@@ -149,6 +194,9 @@ def end_session():
     """
     Professor ends the session.
     """
+    if 'professor_name' not in session:
+        return jsonify({"success": False, "message": "Not authenticated."}), 401
+        
     data = request.get_json()
     k_code = data.get('k_code', '').strip()
     
@@ -163,6 +211,9 @@ def manual_mark():
     """
     Professor manually marks a student present.
     """
+    if 'professor_name' not in session:
+        return jsonify({"success": False, "message": "Not authenticated."}), 401
+        
     data = request.get_json()
     roll_no = data.get('roll_no', '').strip()
     k_code = data.get('k_code', '').strip()
@@ -178,5 +229,8 @@ def get_attendance():
     """
     Return all active sessions and their attendees.
     """
+    if 'professor_name' not in session:
+        return jsonify({"success": False, "message": "Not authenticated."}), 401
+        
     active_sessions = services.get_all_active_sessions()
     return jsonify(active_sessions)
